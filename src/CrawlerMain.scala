@@ -13,7 +13,7 @@ object CrawlerMain {
    */
    def main(args: Array[String]): Unit = {
       var urlList: ListBuffer[String] = new ListBuffer[String]
-      var nestingLevel: Int = 0
+      var nestingLevel: Int = 2
 
       // If a CSV has been provided, populate a list with the values
       if (args.length > 0) {
@@ -32,8 +32,8 @@ object CrawlerMain {
       // Create a crawler for each URL provided
       var crawlerList: ListBuffer[WebCrawler] = new mutable.ListBuffer
       for(url <- urlList) {
-         crawlerList.addOne(new WebCrawler(url))
-         crawlerList(0).run()
+         crawlerList.addOne(new WebCrawler(url, nestingLevel))
+         crawlerList.last.run()
       }
 
 
