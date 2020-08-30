@@ -1,5 +1,6 @@
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.io.Source
 
 object CrawlerMain {
    /*
@@ -7,12 +8,14 @@ object CrawlerMain {
    ** args(1): Nesting level
    */
    def main(args: Array[String]): Unit = {
-      var urlList: ListBuffer[String] = new ListBuffer[String]
-      var nestingLevel: Int = 3
+      var nestingLevel: Int = 1
+      var urlList: ListBuffer[String] = new ListBuffer[String]()
 
       // If a CSV has been provided, populate a list with the values
       if (args.length > 0) {
-         urlList = ListBuffer.from(args(0).split(",").toList)
+         val bufferedSource = Source.fromFile(args(0))
+         Source.fromFile(args(0)).getLines().mkString.split(",").foreach(str => urlList.addOne(str))
+         bufferedSource.close()
 
          // If a nesting level has been provided, store it
          if (args.length > 1) {
@@ -28,10 +31,8 @@ object CrawlerMain {
       var crawlerList: ListBuffer[WebCrawler] = new mutable.ListBuffer
       for(url <- urlList) {
          crawlerList.addOne(new WebCrawler(url, nestingLevel))
-         crawlerList.last.run()
+         crawlerList.last.start()
       }
-
-//      val testClass: ClassName = new ClassName()
-//      testClass.run()
+      crawlerList.foreach(thread => thread.join())
    }
 }

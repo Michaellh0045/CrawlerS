@@ -11,8 +11,10 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    var urlIndex: Int = 0
    var rootUrl: String = url
    var nestingLevel: Int = nLevel
+   var illegalCharacters: Set[Char] = "<>:\"/\\|?*".toSet
    var urls: LinkedHashSet[String] = LinkedHashSet[String](url)
    var visitedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
+   var storageDir: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters).stripPrefix("https")
 
    def crawlUrl(url: String = rootUrl): Unit = {
       var retrievedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
@@ -32,15 +34,8 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    }
 
    def savePage(url: String, htmlPage: Document): Unit = {
-      var illegalCharacters: Set[Char] = "<>:\"/\\|?*".toSet
-      var fileName: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters) +
-         url.filterNot(illegalCharacters).stripPrefix("https") + ".html"
-
-      var dirName: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters)
-      var dir: File = new File(dirName)
-      if(!dir.exists()) {
-         dir.mkdir()
-      }
+      var fileName: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters).stripPrefix("https") +
+         "/" + url.filterNot(illegalCharacters).stripPrefix("https") + ".html"
 
       val file = new File(fileName)
       if (file.createNewFile())
@@ -57,18 +52,31 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    }
 
    def makeStorageDir(): Unit = {
-      var dirName: String = "StoredPages/" + rootUrl
+      var dir: File = new File(storageDir)
+      if(!dir.exists()) {
+         dir.mkdir()
+      }
    }
 
    def isWithinNestingLevel(url: String): Boolean = {
-      url.stripPrefix("https://").count(p => equals("/")).<(nestingLevel)
+      println("URL(" + url + ") not within nesting level.")
+      val res = url.stripPrefix("https://").count(p => equals("/")).<(nestingLevel)
+      if (!res) {
+         println("URL(" + url + ") not within nesting level.")
+      }
+      res
    }
 
    def isChildOfRoot(url: String): Boolean = {
-      url.contains(rootUrl)
+      val res = url.contains(rootUrl.stripPrefix("https://"))
+      if (!res) {
+         println("URL(" + url + ") not child of root(" + rootUrl + ")")
+      }
+      res
    }
 
    override def run(): Unit = {
+      makeStorageDir()
          while (this.urlIndex < urls.size) {
             crawlUrl(urls.toArray.array(urlIndex))
             urlIndex += 1
