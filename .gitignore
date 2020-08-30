@@ -3,4 +3,8 @@
 *.ipr
 *.iws
 .idea
+StoredPages/*
 out
+
+# git ignore exception
+!StoredPages/.gitkeep

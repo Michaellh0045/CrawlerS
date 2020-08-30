@@ -49,7 +49,7 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
       try {
          val file = new File(fileName)
          if (file.createNewFile()) {
-            println("Created file: " + file.getName)
+            println("Created file for url: " + url)
          }
          else {
             println("File already exists: " + file.getName)
@@ -71,19 +71,18 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    }
 
    def isWithinNestingLevel(url: String): Boolean = {
-      val res = url.stripPrefix("https://").count(p => equals("/")).<(nestingLevel)
-      if (!res) {
-//         println("URL(" + url + ") not within nesting level.")
+      val slashCount = url.stripPrefix("https://").count(_ == '/')
+      if (slashCount <= nestingLevel) {
+         println("URL(" + url + ") is within nesting level. [" + slashCount + "," + nestingLevel + "]")
+         true
+      } else {
+         println("URL(" + url + ") not within nesting level. [" + slashCount + "," + nestingLevel + "]")
+         false
       }
-      res
    }
 
    def isChildOfRoot(url: String): Boolean = {
-      val res = url.contains(rootUrl.stripPrefix("https://"))
-      if (!res) {
-//         println("URL(" + url + ") not child of root(" + rootUrl + ")")
-      }
-      res
+      url.contains(rootUrl.stripPrefix("https://"))
    }
 
    override def run(): Unit = {
