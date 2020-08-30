@@ -5,76 +5,43 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.jsoup.select.Elements
 
-import scala.collection.mutable
 import scala.collection.mutable.LinkedHashSet
 
-
-object WebCrawler {
-   private var visitedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
-   private var newUrls: LinkedHashSet[String] = LinkedHashSet[String]()
-
-   def addVisitedUrls(url: String): Boolean = {
-      this.synchronized {
-         return visitedUrls.add(url)
-      }
-   }
-
-   def addNewUrls(url: String): Boolean = {
-      this.synchronized {
-         if (!visitedUrls.contains(url)) {
-            return newUrls.add(url)
-         }
-         else {
-            return false
-         }
-      }
-   }
-
-   def getNewUrl(): String = {
-      this.synchronized {
-         var newUrl: String = newUrls.last
-         newUrls.remove(newUrl)
-         return newUrl
-      }
-   }
-}
-
 class WebCrawler(var url: String, var nLevel: Int) extends Thread {
+   var urlIndex: Int = 0
    var rootUrl: String = url
    var nestingLevel: Int = nLevel
+   var urls: LinkedHashSet[String] = LinkedHashSet[String](url)
+   var visitedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
 
-   def getRootUrl(): String = {
-      return this.rootUrl
-   }
-   def setRootUrl(newRoot: String): Unit = {
-      this.rootUrl = newRoot
-   }
-
-   def crawlPage(url: String = rootUrl): Unit = {
-      Thread.sleep(1200)
+   def crawlUrl(url: String = rootUrl): Unit = {
+      var retrievedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
+      Thread.sleep(1100)
       var htmlPage: Document = Jsoup.connect(url).get()
       var linksOnPage: Elements = htmlPage.select("a[href]")
 
       var iterator: util.Iterator[Element] = linksOnPage.iterator()
       while (iterator.hasNext) {
          var childUrl: String = iterator.next().attr("abs:href")
-         if (WebCrawler.addNewUrls(childUrl)) {
+         if (isChildOfRoot(childUrl) && isWithinNestingLevel(childUrl) && this.urls.add(childUrl)) {
             println("New URL to visit added: " + childUrl)
          }
       }
 
-      if (WebCrawler.addVisitedUrls(url)) {
-         println("Visited URL: " + url)
-         savePage(url, htmlPage)
-      }
-
-      while (WebCrawler.newUrls.nonEmpty) {
-         new WebCrawler(WebCrawler.getNewUrl(), (nestingLevel - 1)).run()
-      }
+      savePage(url, htmlPage)
    }
 
    def savePage(url: String, htmlPage: Document): Unit = {
-      val fileName: String = "StoredPages/" + "page_" + WebCrawler.visitedUrls.size + ".html"
+      var illegalCharacters: Set[Char] = "<>:\"/\\|?*".toSet
+      var fileName: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters) +
+         url.filterNot(illegalCharacters).stripPrefix("https") + ".html"
+
+      var dirName: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters)
+      var dir: File = new File(dirName)
+      if(!dir.exists()) {
+         dir.mkdir()
+      }
+
       val file = new File(fileName)
       if (file.createNewFile())
       {
@@ -89,14 +56,22 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
       fileWriter.close()
    }
 
+   def makeStorageDir(): Unit = {
+      var dirName: String = "StoredPages/" + rootUrl
+   }
+
+   def isWithinNestingLevel(url: String): Boolean = {
+      url.stripPrefix("https://").count(p => equals("/")).<(nestingLevel)
+   }
+
+   def isChildOfRoot(url: String): Boolean = {
+      url.contains(rootUrl)
+   }
+
    override def run(): Unit = {
-      println("Doing thread stuff, please come back later.")
-      if (this.nestingLevel > 0) {
-         this.crawlPage()
-      }
-      else {
-         println("Nesting level 0 reached.")
-      }
-      join()
+         while (this.urlIndex < urls.size) {
+            crawlUrl(urls.toArray.array(urlIndex))
+            urlIndex += 1
+         }
    }
 }

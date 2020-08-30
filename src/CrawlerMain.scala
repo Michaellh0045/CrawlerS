@@ -1,8 +1,3 @@
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
-import org.jsoup.select.Elements
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -13,7 +8,7 @@ object CrawlerMain {
    */
    def main(args: Array[String]): Unit = {
       var urlList: ListBuffer[String] = new ListBuffer[String]
-      var nestingLevel: Int = 2
+      var nestingLevel: Int = 3
 
       // If a CSV has been provided, populate a list with the values
       if (args.length > 0) {
@@ -36,8 +31,7 @@ object CrawlerMain {
          crawlerList.last.run()
       }
 
-
-
-//      crawler.getPageLinks(crawler.url)
+//      val testClass: ClassName = new ClassName()
+//      testClass.run()
    }
 }
