@@ -11,7 +11,7 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    var urlIndex: Int = 0
    var rootUrl: String = url
    var nestingLevel: Int = nLevel
-   var illegalCharacters: Set[Char] = "<>:\"/\\|?*".toSet
+   var illegalCharacters: Set[Char] = "<>:\"/\\|?*=".toSet
    var urls: LinkedHashSet[String] = LinkedHashSet[String](url)
    var visitedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
    var storageDir: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters).stripPrefix("https")
@@ -19,36 +19,48 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    def crawlUrl(url: String = rootUrl): Unit = {
       var retrievedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
       Thread.sleep(1100)
-      var htmlPage: Document = Jsoup.connect(url).get()
-      var linksOnPage: Elements = htmlPage.select("a[href]")
 
-      var iterator: util.Iterator[Element] = linksOnPage.iterator()
-      while (iterator.hasNext) {
-         var childUrl: String = iterator.next().attr("abs:href")
-         if (isChildOfRoot(childUrl) && isWithinNestingLevel(childUrl) && this.urls.add(childUrl)) {
-            println("New URL to visit added: " + childUrl)
+      try {
+         var htmlPage: Document = Jsoup.connect(url).get()
+         var linksOnPage: Elements = htmlPage.select("a[href]")
+
+         var iterator: util.Iterator[Element] = linksOnPage.iterator()
+         while (iterator.hasNext) {
+            var childUrl: String = iterator.next().attr("abs:href")
+            if (isChildOfRoot(childUrl) && isWithinNestingLevel(childUrl) && this.urls.add(childUrl)) {
+               println("New URL to visit added: " + childUrl)
+            }
          }
-      }
 
-      savePage(url, htmlPage)
+         savePage(url, htmlPage)
+      } catch {
+         case e: Exception => println(e)
+      }
    }
 
    def savePage(url: String, htmlPage: Document): Unit = {
       var fileName: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters).stripPrefix("https") +
          "/" + url.filterNot(illegalCharacters).stripPrefix("https") + ".html"
 
-      val file = new File(fileName)
-      if (file.createNewFile())
+      if (fileName.length > 255)
       {
-         println("Created file: " + file.getName)
+         fileName = fileName.dropRight(fileName.size - 255)
       }
-      else {
-         println("File already exists: " + file.getName)
-      }
+      try {
+         val file = new File(fileName)
+         if (file.createNewFile()) {
+            println("Created file: " + file.getName)
+         }
+         else {
+            println("File already exists: " + file.getName)
+         }
 
-      val fileWriter = new BufferedWriter(new FileWriter(file))
-      fileWriter.write(htmlPage.toString)
-      fileWriter.close()
+         val fileWriter = new BufferedWriter(new FileWriter(file))
+         fileWriter.write(htmlPage.toString)
+         fileWriter.close()
+      } catch {
+         case e: Exception => println("File name cause exception: " + fileName)
+      }
    }
 
    def makeStorageDir(): Unit = {
@@ -59,10 +71,9 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    }
 
    def isWithinNestingLevel(url: String): Boolean = {
-      println("URL(" + url + ") not within nesting level.")
       val res = url.stripPrefix("https://").count(p => equals("/")).<(nestingLevel)
       if (!res) {
-         println("URL(" + url + ") not within nesting level.")
+//         println("URL(" + url + ") not within nesting level.")
       }
       res
    }
@@ -70,7 +81,7 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    def isChildOfRoot(url: String): Boolean = {
       val res = url.contains(rootUrl.stripPrefix("https://"))
       if (!res) {
-         println("URL(" + url + ") not child of root(" + rootUrl + ")")
+//         println("URL(" + url + ") not child of root(" + rootUrl + ")")
       }
       res
    }
