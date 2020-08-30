@@ -9,12 +9,12 @@ object CrawlerMain {
    */
    def main(args: Array[String]): Unit = {
       var nestingLevel: Int = 1
-      var urlList: ListBuffer[String] = new ListBuffer[String]()
+      val urlList: ListBuffer[String] = new ListBuffer[String]()
 
       // If a CSV has been provided, populate a list with the values
       if (args.length > 0) {
          val bufferedSource = Source.fromFile(args(0))
-         Source.fromFile(args(0)).getLines().mkString.split(",").foreach(str => urlList.addOne(str))
+         bufferedSource.getLines().mkString.split(",").foreach(str => urlList.addOne(str))
          bufferedSource.close()
 
          // If a nesting level has been provided, store it
@@ -28,7 +28,7 @@ object CrawlerMain {
       }
 
       // Create a crawler for each URL provided
-      var crawlerList: ListBuffer[WebCrawler] = new mutable.ListBuffer
+      val crawlerList: ListBuffer[WebCrawler] = new mutable.ListBuffer
       for(url <- urlList) {
          crawlerList.addOne(new WebCrawler(url, nestingLevel))
          crawlerList.last.start()

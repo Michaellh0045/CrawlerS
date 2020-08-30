@@ -5,28 +5,28 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.jsoup.select.Elements
 
-import scala.collection.mutable.LinkedHashSet
+import scala.collection.mutable
 
 class WebCrawler(var url: String, var nLevel: Int) extends Thread {
    var urlIndex: Int = 0
    var rootUrl: String = url
    var nestingLevel: Int = nLevel
    var illegalCharacters: Set[Char] = "<>:\"/\\|?*=".toSet
-   var urls: LinkedHashSet[String] = LinkedHashSet[String](url)
-   var visitedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
+   var urls: mutable.LinkedHashSet[String] = mutable.LinkedHashSet[String](url)
+   var visitedUrls: mutable.LinkedHashSet[String] = mutable.LinkedHashSet[String]()
    var storageDir: String = "StoredPages/" + rootUrl.filterNot(illegalCharacters).stripPrefix("https")
 
    def crawlUrl(url: String = rootUrl): Unit = {
-      var retrievedUrls: LinkedHashSet[String] = LinkedHashSet[String]()
+      // Note: Thread sleep is here so that sites don't perceive a DDOS attempt.
       Thread.sleep(1100)
 
       try {
-         var htmlPage: Document = Jsoup.connect(url).get()
-         var linksOnPage: Elements = htmlPage.select("a[href]")
+         val htmlPage: Document = Jsoup.connect(url).get()
+         val linksOnPage: Elements = htmlPage.select("a[href]")
 
-         var iterator: util.Iterator[Element] = linksOnPage.iterator()
+         val iterator: util.Iterator[Element] = linksOnPage.iterator()
          while (iterator.hasNext) {
-            var childUrl: String = iterator.next().attr("abs:href")
+            val childUrl: String = iterator.next().attr("abs:href")
             if (isChildOfRoot(childUrl) && isWithinNestingLevel(childUrl) && this.urls.add(childUrl)) {
                println("New URL to visit added: " + childUrl)
             }
@@ -44,7 +44,7 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
 
       if (fileName.length > 255)
       {
-         fileName = fileName.dropRight(fileName.size - 255)
+         fileName = fileName.dropRight(fileName.length - 255)
       }
       try {
          val file = new File(fileName)
@@ -60,11 +60,12 @@ class WebCrawler(var url: String, var nLevel: Int) extends Thread {
          fileWriter.close()
       } catch {
          case e: Exception => println("File name cause exception: " + fileName)
+            println("Exception: " + e.toString)
       }
    }
 
    def makeStorageDir(): Unit = {
-      var dir: File = new File(storageDir)
+      val dir: File = new File(storageDir)
       if(!dir.exists()) {
          dir.mkdir()
       }
